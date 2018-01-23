@@ -1,29 +1,37 @@
 const net = require(`net`);
 
+let connections = [];
+
 // create a new server
-const server = net.createServer((socket) => {
+const server = net.createServer();
 
-  // client is listening for connection
-  console.log(`client connected`);
+server.on(`connection`, (socket) => {
+  console.log(`Connection established`);
 
-  socket.write(`Hello, socket client!`);
-  socket.pipe(socket);
+  socket.setEncoding(`utf8`);
+
+  connections.push(socket); // add new connections to array
 
   socket.on(`data`, (data) => {
-    socket.write(`socket data`);
-  })
+    console.log(`Received: ${data}`);
+
+    connections
+      .filter(element => { // filter out client that sent msg
+        return element !== socket;
+      })
+      .forEach(element => { // write the message to other connected clients
+        element.write(data);
+      });
+  });
 
   socket.on(`end`, () => {
-    console.log(`client disconnected`);
+    connections.splice(connections.indexOf(socket, 1));
+    console.log(connections);
+    console.log(`Client disconnected`);
   });
 });
 
-server.on(`error`, (err) => {
-  throw err;
-});
-
 server.listen(6969, `0.0.0.0`, () => {
-  console.log(`server listening on port 6969`);
+  console.log(`Server listening on port 6969`);
 });
 
-// broadcast
