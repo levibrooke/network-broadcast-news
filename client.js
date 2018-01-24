@@ -12,7 +12,7 @@ const client = net.connect(6969, `0.0.0.0`, () => {
 });
 
 client.on(`data`, (data) => {
-  console.log(`Received: ${data}`);
+  console.log(`${data}`);
 })
 
 client.on(`close`, () => {

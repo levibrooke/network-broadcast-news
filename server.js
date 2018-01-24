@@ -9,11 +9,19 @@ server.on(`connection`, (socket) => {
   console.log(`Connection established`);
 
   socket.setEncoding(`utf8`);
-  process.stdin.pipe(socket); // pipe from server to client
   socket.user = null; // create user property on socket obj
   connections.push(socket); // add new connections to array
   console.log(connections);
 
+  // process.stdin.pipe(socket); // pipe from server to client
+  process.stdin.on(`readable`, () => { // admin broadcasts to clients
+    const chunk = process.stdin.read();
+    if (chunk !== null) {
+      connections.forEach(element => {
+        element.write(`[ADMIN] ${chunk}`);
+      });
+    }
+  });
 
   socket.write(`Please enter a username:`);
 
@@ -21,13 +29,18 @@ server.on(`connection`, (socket) => {
 
     // if no username yet set it
     if (socket.user === null) {
-      socket.user = data.trim();
+      if (!data.trim().includes(`admin`)) {
+        socket.user = data.trim();
+      } else {
+        socket.write(`[ADMIN] Username cannot contain 'admin'\nPlease enter a username:`);
+        return false;
+      }
       console.log(connections);
     }
     else { // if username is not null
       let username = socket.user;
 
-      console.log(`Received ${username}: ${data}`);
+      console.log(`Received @${username}: ${data}`);
 
       connections
         .filter(element => { // filter out client that sent msg
@@ -49,12 +62,6 @@ server.on(`connection`, (socket) => {
 server.listen(6969, `0.0.0.0`, () => {
   console.log(`Server listening on port 6969`);
 });
-
-
-// 1. client connects to server
-// 2. server asks client to enter username
-// 3. server stores username
-// 4. prepend all messages from the user w/ username
 
 
 
